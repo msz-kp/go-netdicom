@@ -7,11 +7,11 @@ import (
 	"sync"
 	"testing"
 
-	godicom "github.com/grailbio/go-dicom"
-	"github.com/grailbio/go-dicom/dicomtag"
-	"github.com/grailbio/go-netdicom"
-	"github.com/grailbio/go-netdicom/dimse"
-	"github.com/grailbio/go-netdicom/sopclass"
+	godicom "github.com/msz-kp/go-dicom"
+	"github.com/msz-kp/go-dicom/dicomtag"
+	"github.com/msz-kp/go-netdicom"
+	"github.com/msz-kp/go-netdicom/dimse"
+	"github.com/msz-kp/go-netdicom/sopclass"
 	"github.com/stretchr/testify/require"
 )
 

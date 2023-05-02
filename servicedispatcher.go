@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/grailbio/go-dicom/dicomlog"
-	"github.com/grailbio/go-netdicom/dimse"
+	"github.com/msz-kp/go-dicom/dicomlog"
+	"github.com/msz-kp/go-netdicom/dimse"
 )
 
 // serviceDispatcher multiplexes statemachine upcall events to DIMSE commands.

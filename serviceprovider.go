@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"net"
 
-	dicom "github.com/grailbio/go-dicom"
-	"github.com/grailbio/go-dicom/dicomio"
-	"github.com/grailbio/go-dicom/dicomlog"
+	dicom "github.com/msz-kp/go-dicom"
+	"github.com/msz-kp/go-dicom/dicomio"
+	"github.com/msz-kp/go-dicom/dicomlog"
 
-	"github.com/grailbio/go-netdicom/dimse"
-	"github.com/grailbio/go-netdicom/sopclass"
+	"github.com/msz-kp/go-netdicom/dimse"
+	"github.com/msz-kp/go-netdicom/sopclass"
 )
 
 // CMoveResult is an object streamed by CMove implementation.

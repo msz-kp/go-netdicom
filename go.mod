@@ -1,10 +1,8 @@
-module github.com/grailbio/go-netdicom
+module github.com/msz-kp/go-netdicom
 
 go 1.14
 
 require (
-	github.com/grailbio/go-dicom v0.0.0-20190117035129-c30d9eaca591
+	github.com/msz-kp/go-dicom v0.0.0-20230502124936-e4729c0905e5 // indirect
 	github.com/stretchr/testify v1.2.2
 )
-
-replace github.com/grailbio/go-dicom => github.com/segmed/go-dicom v0.0.0-20221212083615-7333634ce03f

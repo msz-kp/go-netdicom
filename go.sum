@@ -2,6 +2,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gobwas/glob v0.0.0-20170212200151-51eb1ee00b6d h1:IngNQgbqr5ZOU0exk395Szrvkzes9Ilk1fmJfkw7d+M=
 github.com/gobwas/glob v0.0.0-20170212200151-51eb1ee00b6d/go.mod h1:d3Ez4x06l9bZtSvzIay5+Yzi0fmZzPgnTbPcKjJAkT8=
+github.com/msz-kp/go-dicom v0.0.0-20230502124936-e4729c0905e5 h1:nfdGkOLBZrUc/vDDLGRBKdhzLrxB+qFJfGuofM6nQAA=
+github.com/msz-kp/go-dicom v0.0.0-20230502124936-e4729c0905e5/go.mod h1:wrECIHOB1EgxjolO9cPHjXQusagO36TWHlA+wV71Apk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/segmed/go-dicom v0.0.0-20221212083615-7333634ce03f h1:eVDnu8UNwUByJDt22LhI9v79lJA0iQRX6Vje7dDN1UM=
