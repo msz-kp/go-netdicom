@@ -3,6 +3,7 @@
 package netdicom
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -24,6 +25,7 @@ type CMoveResult struct {
 }
 
 func handleCStoreStream(
+	ctx context.Context,
 	cb CStoreStreamCallback,
 	conn net.Conn,
 	c *dimse.CStoreRq,
@@ -33,6 +35,7 @@ func handleCStoreStream(
 	connState := getConnState(conn)
 	if cb != nil {
 		status = cb(
+			ctx,
 			connState,
 			cs.context.transferSyntaxUID,
 			c.AffectedSOPClassUID,
@@ -50,6 +53,7 @@ func handleCStoreStream(
 }
 
 func handleCStore(
+	ctx context.Context,
 	cb CStoreCallback,
 	connState ConnectionState,
 	c *dimse.CStoreRq, data []byte,
@@ -57,6 +61,7 @@ func handleCStore(
 	status := dimse.Status{Status: dimse.StatusUnrecognizedOperation}
 	if cb != nil {
 		status = cb(
+			ctx,
 			connState,
 			cs.context.transferSyntaxUID,
 			c.AffectedSOPClassUID,
@@ -74,6 +79,7 @@ func handleCStore(
 }
 
 func handleCFind(
+	ctx context.Context,
 	params ServiceProviderParams,
 	connState ConnectionState,
 	c *dimse.CFindRq, data []byte,
@@ -102,7 +108,7 @@ func handleCFind(
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	responseCh := make(chan CFindResult, 128)
 	go func() {
-		params.CFind(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CFind(ctx, connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
 	}()
 	for resp := range responseCh {
 		if resp.Err != nil {
@@ -140,6 +146,7 @@ func handleCFind(
 }
 
 func handleCMove(
+	ctx context.Context,
 	params ServiceProviderParams,
 	connState ConnectionState,
 	c *dimse.CMoveRq, data []byte,
@@ -174,7 +181,7 @@ func handleCMove(
 	dicomlog.Vprintf(1, "dicom.serviceProvider: C-MOVE-RQ payload: %s", elementsString(elems))
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
-		params.CMove(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CMove(ctx, connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
 	}()
 	// responseCh :=
 	status := dimse.Status{Status: dimse.StatusSuccess}
@@ -218,6 +225,7 @@ func handleCMove(
 }
 
 func handleCGet(
+	ctx context.Context,
 	params ServiceProviderParams,
 	connState ConnectionState,
 	c *dimse.CGetRq, data []byte, cs *serviceCommandState) {
@@ -246,7 +254,7 @@ func handleCGet(
 	dicomlog.Vprintf(1, "dicom.serviceProvider: C-GET-RQ payload: %s", elementsString(elems))
 	responseCh := make(chan CMoveResult, 128)
 	go func() {
-		params.CGet(connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
+		params.CGet(ctx, connState, cs.context.transferSyntaxUID, c.AffectedSOPClassUID, elems, responseCh)
 	}()
 	status := dimse.Status{Status: dimse.StatusSuccess}
 	var numSuccesses, numFailures uint16
@@ -299,13 +307,14 @@ func handleCGet(
 }
 
 func handleCEcho(
+	ctx context.Context,
 	params ServiceProviderParams,
 	connState ConnectionState,
 	c *dimse.CEchoRq, data []byte,
 	cs *serviceCommandState) {
 	status := dimse.Status{Status: dimse.StatusUnrecognizedOperation}
 	if params.CEcho != nil {
-		status = params.CEcho(connState)
+		status = params.CEcho(ctx, connState)
 	}
 	dicomlog.Vprintf(0, "dicom.serviceProvider: Received E-ECHO: context: %+v, status: %+v", cs.context, status)
 	resp := &dimse.CEchoRsp{
@@ -349,6 +358,11 @@ type ServiceProviderParams struct {
 	// If CStoreCallback=nil, a C-STORE call will produce an error response.
 	CStoreStream CStoreStreamCallback
 
+	//connect/disconnect
+	OnConnect func(ctx context.Context)
+	OnDisconnect func(ctx context.Context)
+
+
 	// TLSConfig, if non-nil, enables TLS on the connection. See
 	// https://gist.github.com/michaljemala/d6f4e01c4834bf47a9c4 for an
 	// example for creating a TLS config from x509 cert files.
@@ -374,6 +388,7 @@ const DefaultMaxPDUSize = 4 << 20
 // header, followed by data. It should return either dimse.Success0 on success,
 // or one of CStoreStatus* error codes on errors.
 type CStoreCallback func(
+	ctx context.Context,
 	conn ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -382,6 +397,7 @@ type CStoreCallback func(
 
 // CStoreStreamCallback is called C-STORE request with a channel to receive the payload
 type CStoreStreamCallback func(
+	ctx context.Context,
 	conn ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -400,6 +416,7 @@ type CStoreStreamCallback func(
 // dataset.  The callback must close the channel after it produces all the
 // responses.
 type CFindCallback func(
+	ctx context.Context,
 	conn ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -415,6 +432,7 @@ type CFindCallback func(
 // block. The callback must close the channel after it produces all the
 // datasets.
 type CMoveCallback func(
+	ctx context.Context,
 	conn ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -433,7 +451,7 @@ type ConnectionState struct {
 
 // CEchoCallback implements C-ECHO callback. It typically just returns
 // dimse.Success.
-type CEchoCallback func(conn ConnectionState) dimse.Status
+type CEchoCallback func(ctx context.Context, conn ConnectionState) dimse.Status
 
 // ServiceProvider encapsulates the state for DICOM server (provider).
 type ServiceProvider struct {
@@ -531,42 +549,56 @@ func getConnState(conn net.Conn) (cs ConnectionState) {
 // RunProviderForConn starts threads for running a DICOM server on "conn". This
 // function returns immediately; "conn" will be cleaned up in the background.
 func RunProviderForConn(conn net.Conn, params ServiceProviderParams) {
+	ctx := context.Background()
 	upcallStreamCh := make(chan upcallEvent, 128)
 	label := newUID("sc")
+	rIP, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+	ctx = context.WithValue(ctx, "SessionID", label)
+	ctx = context.WithValue(ctx, "RemoteIP", rIP)
 	disp := newServiceDispatcher(label)
 	if params.CStoreStream != nil {
 		disp.registerStreamCallback(dimse.CommandFieldCStoreRq,
 			func(msg dimse.Message, data chan []byte, cs *serviceCommandState) {
-				handleCStoreStream(params.CStoreStream, conn, msg.(*dimse.CStoreRq), data, cs)
+				handleCStoreStream(ctx, params.CStoreStream, conn, msg.(*dimse.CStoreRq), data, cs)
 			})
 	} else {
 		disp.registerCallback(dimse.CommandFieldCStoreRq,
 			func(msg dimse.Message, data []byte, cs *serviceCommandState) {
-				handleCStore(params.CStore, getConnState(conn), msg.(*dimse.CStoreRq), data, cs)
+				handleCStore(ctx, params.CStore, getConnState(conn), msg.(*dimse.CStoreRq), data, cs)
 			})
 	}
 	disp.registerCallback(dimse.CommandFieldCFindRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
-			handleCFind(params, getConnState(conn), msg.(*dimse.CFindRq), data, cs)
+			handleCFind(ctx, params, getConnState(conn), msg.(*dimse.CFindRq), data, cs)
 		})
 	disp.registerCallback(dimse.CommandFieldCMoveRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
-			handleCMove(params, getConnState(conn), msg.(*dimse.CMoveRq), data, cs)
+			handleCMove(ctx, params, getConnState(conn), msg.(*dimse.CMoveRq), data, cs)
 		})
 	disp.registerCallback(dimse.CommandFieldCGetRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
-			handleCGet(params, getConnState(conn), msg.(*dimse.CGetRq), data, cs)
+			handleCGet(ctx, params, getConnState(conn), msg.(*dimse.CGetRq), data, cs)
 		})
 	disp.registerCallback(dimse.CommandFieldCEchoRq,
 		func(msg dimse.Message, data []byte, cs *serviceCommandState) {
-			handleCEcho(params, getConnState(conn), msg.(*dimse.CEchoRq), data, cs)
+			handleCEcho(ctx, params, getConnState(conn), msg.(*dimse.CEchoRq), data, cs)
 		})
 	go func() {
 		runStateMachineForServiceProvider(conn, upcallStreamCh, disp.downcallCh, label)
 	}()
+
+	if params.OnConnect != nil {
+		params.OnConnect(ctx)
+	}
+
 	for event := range upcallStreamCh {
 		disp.handleEvent(event)
 	}
+
+	if params.OnDisconnect != nil {
+		params.OnDisconnect(ctx)
+	}
+
 	dicomlog.Vprintf(0, "dicom.serviceProvider(%s): Finished connection %p (remote: %+v)", label, conn, conn.RemoteAddr())
 	disp.close()
 }

@@ -1,6 +1,7 @@
 package netdicom
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"io/ioutil"
@@ -47,12 +48,13 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func onCEchoRequest(connState ConnectionState) dimse.Status {
+func onCEchoRequest(ctx context.Context, connState ConnectionState) dimse.Status {
 	nEchoRequests++
 	return dimse.Success
 }
 
 func onCStoreRequest(
+	ctx context.Context,
 	connState ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -76,6 +78,7 @@ func onCStoreRequest(
 }
 
 func onCFindRequest(
+	ctx context.Context,
 	connState ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -111,6 +114,7 @@ func onCFindRequest(
 }
 
 func onCGetRequest(
+	ctx context.Context,
 	connState ConnectionState,
 	transferSyntaxUID string,
 	sopClassUID string,
@@ -224,14 +228,14 @@ func getProviderPort() string {
 }
 
 // Test using "storescu" command from dcmtk.
-func TestDCMTKCStore(t *testing.T) {
+func TestDCM4CHECStore(t *testing.T) {
 	storescuPath, err := exec.LookPath("storescu")
 	if err != nil {
 		t.Skip("storescu not found.")
 		return
 	}
 	cstoreData = nil
-	cmd := exec.Command(storescuPath, "localhost", getProviderPort(), "testdata/reportsi.dcm")
+	cmd := exec.Command(storescuPath, "-c", "PACS@127.0.0.1:" + getProviderPort(), "testdata/reportsi.dcm")
 	require.NoError(t, cmd.Run())
 
 	require.True(t, len(cstoreData) > 0, "No data received")
@@ -242,7 +246,7 @@ func TestDCMTKCStore(t *testing.T) {
 }
 
 // Test using "getscu" command from dcmtk.
-func TestDCMTKCGet(t *testing.T) {
+func TestDCM4CHECGet(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
@@ -252,7 +256,7 @@ func TestDCMTKCGet(t *testing.T) {
 		return
 	}
 	log.Printf("PORT is %v %v", getProviderPort(), tempDir)
-	cmd := exec.Command(getscuPath, "localhost", getProviderPort(), "-od", tempDir, "-k", "0010,0020=foo" /*not used*/)
+	cmd := exec.Command(getscuPath, "-c", "PACS@127.0.0.1:" + getProviderPort(), "--directory", tempDir, "-m", "PatientID=foo" /*not used*/)
 	require.NoError(t, cmd.Run())
 	require.NoError(t, err)
 

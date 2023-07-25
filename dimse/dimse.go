@@ -205,6 +205,7 @@ const (
 	StatusUnrecognizedOperation StatusCode = 0x0211
 	StatusNotAuthorized         StatusCode = 0x0124
 	StatusPending               StatusCode = 0xff00
+	CommandStatusFailure        StatusCode = 0xc001
 
 	// C-STORE-specific status codes. P3.4 GG4-1
 	CStoreOutOfResources              StatusCode = 0xa700
